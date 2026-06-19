@@ -256,7 +256,7 @@ kelompok-8-devsecops-future/
 - ✅ OCI labels untuk traceability
 - ✅ Docker HEALTHCHECK
 
-**Vulnerable dependencies (intentional — untuk demo):**
+**Vulnerable dependencies:**
 
 | Package | Version | CVE | Severity |
 |---------|---------|-----|----------|
@@ -269,13 +269,13 @@ kelompok-8-devsecops-future/
 
 > ⚠️ Dependencies ini **sengaja** menggunakan versi lama dengan known CVE untuk mendemonstrasikan kemampuan vulnerability scanning. Dalam production, semua dependencies harus di-update ke versi terbaru.
 
-### 2. SBOM Generation (Anggota B — Tsll)
+### 2. SBOM Generation
 
 - **Tool**: Syft (Anchore)
 - **Format**: CycloneDX JSON + SPDX JSON
 - **Justifikasi**: O'Donoghue et al. (2024) — Syft memiliki coverage paling konsisten
 
-### 3. Vulnerability Scanning (Anggota C — Acin)
+### 3. Vulnerability Scanning
 
 - **Tool**: Trivy (Aqua Security)
 - **Mode**: Image scan + SBOM-based scan
@@ -283,7 +283,7 @@ kelompok-8-devsecops-future/
 - **Gate**: Pipeline fail pada CRITICAL vulnerability
 - **Justifikasi**: O'Donoghue et al. (2024) — Trivy memiliki detection rate tinggi
 
-### 4. Artifact Signing (Anggota D — Callista)
+### 4. Artifact Signing
 
 - **Tool**: Cosign (Sigstore)
 - **Mode**: Keyless signing (OIDC via GitHub Actions)
