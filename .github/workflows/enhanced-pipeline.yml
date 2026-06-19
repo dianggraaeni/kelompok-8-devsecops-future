@@ -192,7 +192,7 @@ jobs:
           retention-days: 90
 
   # =====================================================
-  # Job 4: Vulnerability Scanning (Anggota C — Acin)
+  # Job 4: Vulnerability Scanning
   # Justifikasi: O'Donoghue et al. (2024) — Trivy scanner
   # =====================================================
   vulnerability-scan:
@@ -262,7 +262,6 @@ jobs:
         run: |
           echo "## 🔍 Vulnerability Scan Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> **Anggota C** — Acintya Edria Sudarsono (5027231020)" >> $GITHUB_STEP_SUMMARY
           echo "> Komponen: Vulnerability Scanning & Security Gate" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
