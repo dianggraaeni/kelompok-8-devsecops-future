@@ -1,4 +1,4 @@
-# 🔐 Kelompok 8 — DevSecOps Supply Chain Security
+# Kelompok 8 — DevSecOps Supply Chain Security
 
 > **"Meningkatkan pipeline DevSecOps dengan Software Supply Chain Security (SBOM Generation + Vulnerability Scanning + Artifact Signing) karena gap kurangnya transparansi dependensi dan verifikasi integritas artifact."**
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 📖 Daftar Isi
+## Daftar Isi
 
 - [Ringkasan Proyek](#-ringkasan-proyek)
 - [Tim](#-tim)
@@ -20,7 +20,7 @@
 
 ---
 
-## 🎯 Ringkasan Proyek
+## Ringkasan Proyek
 
 ### Masalah yang Diselesaikan
 
@@ -37,24 +37,24 @@ Pipeline CI/CD tradisional umumnya hanya menjalankan: **Code → Build → Test 
 
 Kami menambahkan **3 komponen keamanan supply chain** ke pipeline berdasarkan temuan dari paper ilmiah:
 
-1. **📋 SBOM Generation** — Menggunakan [Syft](https://github.com/anchore/syft) dengan format CycloneDX
-2. **🔍 Vulnerability Scanning** — Menggunakan [Trivy](https://github.com/aquasecurity/trivy) dengan security gate
-3. **✍️ Artifact Signing** — Menggunakan [Cosign](https://github.com/sigstore/cosign) dengan Sigstore keyless signing
+1. **SBOM Generation** — Menggunakan [Syft](https://github.com/anchore/syft) dengan format CycloneDX
+2. **Vulnerability Scanning** — Menggunakan [Trivy](https://github.com/aquasecurity/trivy) dengan security gate
+3. **Artifact Signing** — Menggunakan [Cosign](https://github.com/sigstore/cosign) dengan Sigstore keyless signing
 
 ---
 
-## 👥 Tim
+## Tim
 
-| Anggota | Nama | Komponen Teknis |
+| NRP | Nama | Komponen Teknis |
 |---------|------|-----------------|
-| **A** | Dian | App & Containerization (Node.js app, Dockerfile) |
-| **B** | Tsll | CI/CD Pipeline & SBOM (GitHub Actions, Syft) |
-| **C** | Acin | Vulnerability Scanning & Gate (Trivy, security gate) |
-| **D** | Callista | Artifact Signing & Verification (Cosign, Sigstore) |
+| **5027231016** | Dian Anggraeni Putri | App & Containerization (Node.js app, Dockerfile) |
+| **5027231020** | Acintya Edria Sudarsono | Vulnerability Scanning & Gate (Trivy, security gate) |
+| **5027231036** | Tsaldia Hukma Cita | CI/CD Pipeline & SBOM (GitHub Actions, Syft) |
+| **5027231060** | Callista Meyra Azizah | Artifact Signing & Verification (Cosign, Sigstore) |
 
 ---
 
-## 🏗️ Arsitektur
+## Arsitektur
 
 ### Pipeline Sebelum (Baseline)
 ```
@@ -91,7 +91,7 @@ Kami menambahkan **3 komponen keamanan supply chain** ke pipeline berdasarkan te
 
 ---
 
-## 📚 Paper yang Digunakan
+## Paper yang Digunakan
 
 ### Paper 1 (Utama)
 > **"An Empirical Study on Software Bill of Materials: Where We Stand and the Road Ahead"**
@@ -107,11 +107,11 @@ Kami menambahkan **3 komponen keamanan supply chain** ke pipeline berdasarkan te
 > **"An Industry Interview Study of Software Signing for Supply Chain Security"**
 > Kelechi G. Kalu, et al. — **USENIX Security 2025**
 
-📖 Lihat [catatan bacaan lengkap di `papers/`](papers/)
+Lihat [catatan bacaan lengkap di `papers/`](papers/)
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -196,7 +196,7 @@ cosign verify \
 
 ---
 
-## 📁 Struktur Repositori
+## Struktur Repositori
 
 ```
 kelompok-8-devsecops-future/
@@ -237,7 +237,7 @@ kelompok-8-devsecops-future/
 
 ---
 
-## 🔧 Komponen Implementasi
+## Komponen Implementasi
 
 ### 1. Aplikasi Target (Anggota A — Dian)
 
@@ -292,7 +292,7 @@ kelompok-8-devsecops-future/
 
 ---
 
-## 📊 Evaluasi
+## Evaluasi
 
 ### Metrik Perbandingan
 
@@ -304,11 +304,11 @@ kelompok-8-devsecops-future/
 | Security gate | ❌ Tidak ada | ✅ Fail pada CRITICAL |
 | SLSA level | Level 0 | Level 1-2 |
 
-📊 Lihat detail lengkap di [`evaluation/`](evaluation/)
+Lihat detail lengkap di [`evaluation/`](evaluation/)
 
 ---
 
-## 📝 API Reference
+## API Reference
 
 ### Endpoints
 
@@ -352,7 +352,7 @@ curl http://localhost:3000/tasks \
 
 ---
 
-## 🔄 Cara Reproduksi
+## Cara Reproduksi
 
 ### Dari Nol (Untuk Verifikasi Reproducibility)
 
@@ -367,10 +367,10 @@ curl http://localhost:3000/tasks \
 
 ---
 
-## 📜 Lisensi
+## Lisensi
 
 Proyek ini dibuat untuk keperluan akademis — Tugas Akhir mata kuliah Operasional Pengembang (DevOps).
 
 ---
 
-*Dibuat oleh Kelompok 8 — Dian, Tsll, Acin, Callista*
+*Dibuat oleh Kelompok 8 — Dian, Acin, Tsaldia, Callista*
