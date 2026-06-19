@@ -1,0 +1,51 @@
+# =========================================================
+# .trivyignore — Trivy Ignore Rules
+# =========================================================
+# Anggota C — Acintya Edria Sudarsono (5027231020)
+#
+# File ini mendefinisikan CVE yang secara sadar di-ignore
+# oleh tim. Setiap entry HARUS disertai justifikasi.
+#
+# ⚠️  PENTING: Untuk proyek final project ini, kita TIDAK
+# mengabaikan CVE apapun agar demo menunjukkan full
+# detection capability. File ini disediakan sebagai
+# contoh best practice untuk production use.
+#
+# Format: Satu CVE ID per baris, diikuti komentar
+# =========================================================
+
+# ─────────────────────────────────────────────────────────
+# Template (JANGAN UNCOMMENT - hanya contoh)
+# ─────────────────────────────────────────────────────────
+
+# CVE-YYYY-NNNNN
+#   Justifikasi: [alasan mengapa CVE ini di-ignore]
+#   Package: [nama package]
+#   Risk accepted by: [nama]
+#   Date: [tanggal]
+#   Review date: [tanggal review berikutnya]
+
+# ─────────────────────────────────────────────────────────
+# Contoh penggunaan (dalam production):
+# ─────────────────────────────────────────────────────────
+
+# CVE-2020-28500
+#   Justifikasi: lodash ReDoS — fungsi yang vulnerable
+#   (trimEnd) tidak digunakan dalam kode kita.
+#   Dikonfirmasi melalui function call analysis.
+#   Package: lodash
+#   Risk accepted by: Tim Security
+#   Date: 2024-01-15
+#   Review date: 2024-04-15
+
+# ─────────────────────────────────────────────────────────
+# Catatan dari paper:
+# ─────────────────────────────────────────────────────────
+# O'Donoghue et al. (2024) menunjukkan bahwa false positive
+# rate dalam vulnerability scanning bisa sangat tinggi.
+# .trivyignore adalah mekanisme untuk mengurangi noise
+# setelah dilakukan analisis manual terhadap setiap CVE.
+#
+# Xia et al. (2023) menekankan bahwa SBOM value terletak
+# pada actionability — ignore rules harus digunakan secara
+# bertanggung jawab dengan justifikasi yang jelas.

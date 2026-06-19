@@ -1,41 +1,117 @@
 # =========================================================
 # Konfigurasi Trivy untuk Vulnerability Scanning
 # =========================================================
+# Anggota C — Acintya Edria Sudarsono (5027231020)
+# Komponen: Vulnerability Scanning & Security Gate
+#
 # Tool: Trivy (Aqua Security)
 # Justifikasi: O'Donoghue et al. (2024) mengevaluasi Trivy
-# sebagai scanner dengan detection rate tinggi
+# sebagai scanner dengan detection rate tinggi dan kemampuan
+# scan dari multiple input (image, SBOM, filesystem).
+#
+# Referensi:
+#   - O'Donoghue et al. (2024) — SCORED '24 @ ACM CCS
+#   - Xia et al. (2023) — ICSE 2023
 # =========================================================
 
-# Severity yang di-scan
+# ─────────────────────────────────────────────────────────
+# Severity Configuration
+# ─────────────────────────────────────────────────────────
+# Severity levels yang di-scan. Kami memilih CRITICAL, HIGH,
+# dan MEDIUM untuk mendapatkan gambaran komprehensif tanpa
+# terlalu banyak noise dari LOW/UNKNOWN.
 severity:
   - CRITICAL
   - HIGH
   - MEDIUM
 
-# Ignore unfixed vulnerabilities
-# (vulnerability tanpa fix yang tersedia tidak bisa di-remediate)
+# ─────────────────────────────────────────────────────────
+# Unfixed Vulnerability Policy
+# ─────────────────────────────────────────────────────────
+# Vulnerability tanpa fix yang tersedia tidak bisa
+# di-remediate oleh developer. Untuk fase awal adopsi,
+# kami mengabaikan unfixed vulns agar tidak memblokir
+# pipeline secara tidak perlu.
+#
+# Keputusan ini didukung oleh Xia et al. (2023) yang
+# menekankan pentingnya "actionability" — hanya report
+# vulnerability yang bisa ditindaklanjuti.
 ignore-unfixed: true
 
-# Timeout untuk scanning (dalam detik)
+# ─────────────────────────────────────────────────────────
+# Timeout Configuration
+# ─────────────────────────────────────────────────────────
+# Timeout untuk scanning (dalam detik).
+# 5 menit cukup untuk image medium-sized (~200MB).
 timeout: 300s
 
-# Format output
+# ─────────────────────────────────────────────────────────
+# Output Format
+# ─────────────────────────────────────────────────────────
+# Default format: JSON untuk parsing otomatis.
+# Untuk GitHub Security tab, gunakan format 'sarif'.
+# Dalam pipeline, kita generate keduanya.
 format: json
 
-# Database
+# ─────────────────────────────────────────────────────────
+# Database Configuration
+# ─────────────────────────────────────────────────────────
 db:
-  # Auto-update vulnerability database sebelum scan
+  # Selalu update vulnerability database sebelum scan
+  # untuk memastikan deteksi CVE terbaru.
   skip-update: false
 
-# Vulnerability settings
+# ─────────────────────────────────────────────────────────
+# Vulnerability Type Configuration
+# ─────────────────────────────────────────────────────────
 vulnerability:
-  # Tipe vulnerability yang di-scan
+  # Tipe vulnerability yang di-scan:
+  # - os: OS package vulnerabilities (Alpine, Debian, etc.)
+  # - library: Application library vulnerabilities (npm, pip, etc.)
+  #
+  # Kedua tipe diperlukan karena container image kita
+  # mengandung baik OS packages (dari Alpine base) maupun
+  # application libraries (dari npm install).
   type:
-    - os          # OS package vulnerabilities (Alpine, Debian, etc.)
-    - library     # Application library vulnerabilities (npm, pip, etc.)
+    - os
+    - library
 
-# Security gate configuration
-# CRITICAL: exit code 1 (fail pipeline)
-# HIGH: warning only (untuk fase awal adopsi)
+# ─────────────────────────────────────────────────────────
+# Security Gate Configuration
+# ─────────────────────────────────────────────────────────
+# Exit code policy:
+#   exit-code: 1 → Pipeline FAIL jika vulnerability ditemukan
+#                  pada severity yang di-specify
+#
+# Dalam enhanced-pipeline.yml, kita handle ini secara
+# terpisah di step "Security Gate" untuk granular control:
+#   - CRITICAL → FAIL (block deployment)
+#   - HIGH     → WARNING (log but allow)
+#   - MEDIUM   → INFO (log only)
 exit-code: 1
-exit-on-eol: 1        # Fail jika base image sudah End of Life
+
+# Fail jika base image sudah End of Life (tidak lagi
+# menerima security patches)
+exit-on-eol: 1
+
+# ─────────────────────────────────────────────────────────
+# Scan Mode Configuration (untuk reference)
+# ─────────────────────────────────────────────────────────
+# Trivy mendukung multiple scan modes:
+#
+# 1. Image Scan (default):
+#    trivy image <image-name>
+#    → Scan OS packages + application libraries di image
+#
+# 2. SBOM-based Scan:
+#    trivy sbom <sbom-file>
+#    → Scan dari SBOM yang sudah digenerate oleh Syft
+#    → O'Donoghue et al. (2024) menunjukkan ini memberikan
+#      hasil yang konsisten dengan image scan
+#
+# 3. Filesystem Scan:
+#    trivy fs <directory>
+#    → Scan source code dan lock files langsung
+#
+# Dalam pipeline kita, kita menggunakan mode 1 dan 2
+# untuk perbandingan dan validasi.

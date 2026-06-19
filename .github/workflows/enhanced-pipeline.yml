@@ -262,6 +262,9 @@ jobs:
         run: |
           echo "## 🔍 Vulnerability Scan Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> **Anggota C** — Acintya Edria Sudarsono (5027231020)" >> $GITHUB_STEP_SUMMARY
+          echo "> Komponen: Vulnerability Scanning & Security Gate" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
           # Analyze image scan results
           if [ -f trivy-image-results.json ]; then
@@ -270,22 +273,54 @@ jobs:
             HIGH=$(cat trivy-image-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH")] | length')
             MEDIUM=$(cat trivy-image-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="MEDIUM")] | length')
 
-            echo "### Image Scan (Traditional)" >> $GITHUB_STEP_SUMMARY
+            echo "### 📊 Image Scan (Traditional)" >> $GITHUB_STEP_SUMMARY
             echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
             echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
             echo "| 🔴 CRITICAL | ${CRITICAL} |" >> $GITHUB_STEP_SUMMARY
             echo "| 🟠 HIGH | ${HIGH} |" >> $GITHUB_STEP_SUMMARY
             echo "| 🟡 MEDIUM | ${MEDIUM} |" >> $GITHUB_STEP_SUMMARY
             echo "| **Total** | **${IMAGE_VULNS}** |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # Detailed CVE listing
+            if [ "$IMAGE_VULNS" -gt 0 ]; then
+              echo "### 📋 Detailed Findings (CRITICAL & HIGH)" >> $GITHUB_STEP_SUMMARY
+              echo "| CVE ID | Package | Installed | Fixed | Severity |" >> $GITHUB_STEP_SUMMARY
+              echo "|--------|---------|-----------|-------|----------|" >> $GITHUB_STEP_SUMMARY
+              cat trivy-image-results.json | jq -r '
+                [.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL" or .Severity=="HIGH")] |
+                sort_by(.Severity) | .[] |
+                "| \(.VulnerabilityID) | \(.PkgName) | \(.InstalledVersion) | \(.FixedVersion // "N/A") | \(.Severity) |"
+              ' >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
           fi
 
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Analyze SBOM scan results
+          # Analyze SBOM scan results and compare
           if [ -f trivy-sbom-results.json ]; then
             SBOM_VULNS=$(cat trivy-sbom-results.json | jq '[.Results[]?.Vulnerabilities[]?] | length')
-            echo "### SBOM-based Scan (Enhanced — O'Donoghue et al., 2024)" >> $GITHUB_STEP_SUMMARY
-            echo "- Total vulnerabilities from SBOM scan: **${SBOM_VULNS}**" >> $GITHUB_STEP_SUMMARY
+            SBOM_CRITICAL=$(cat trivy-sbom-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length')
+            SBOM_HIGH=$(cat trivy-sbom-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH")] | length')
+            SBOM_MEDIUM=$(cat trivy-sbom-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="MEDIUM")] | length')
+
+            echo "### 📊 SBOM-based Scan (O'Donoghue et al., 2024)" >> $GITHUB_STEP_SUMMARY
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| 🔴 CRITICAL | ${SBOM_CRITICAL} |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟠 HIGH | ${SBOM_HIGH} |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟡 MEDIUM | ${SBOM_MEDIUM} |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Total** | **${SBOM_VULNS}** |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # Method comparison (validates O'Donoghue et al., 2024)
+            echo "### 🔬 Scan Method Comparison" >> $GITHUB_STEP_SUMMARY
+            echo "> Validating findings from O'Donoghue et al. (2024):" >> $GITHUB_STEP_SUMMARY
+            echo "> *'Tool choice significantly impacts vulnerability detection outcomes'*" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Method | CRITICAL | HIGH | MEDIUM | Total |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|----------|------|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Image Scan | ${CRITICAL} | ${HIGH} | ${MEDIUM} | ${IMAGE_VULNS} |" >> $GITHUB_STEP_SUMMARY
+            echo "| SBOM Scan (CycloneDX) | ${SBOM_CRITICAL} | ${SBOM_HIGH} | ${SBOM_MEDIUM} | ${SBOM_VULNS} |" >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Upload vulnerability reports
@@ -301,22 +336,51 @@ jobs:
 
       # SECURITY GATE: Fail pipeline jika ada CRITICAL vulnerability
       # Justifikasi: Xia et al. (2023) — SBOM value lies in actionability
+      # Anggota C — Acintya Edria Sudarsono (5027231020)
       - name: "🚨 Security Gate: Check for CRITICAL vulnerabilities"
         run: |
+          echo "## 🚨 Security Gate Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
           if [ -f trivy-image-results.json ]; then
             CRITICAL=$(cat trivy-image-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length')
+            HIGH=$(cat trivy-image-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH")] | length')
+
             if [ "$CRITICAL" -gt 0 ]; then
+              echo "### ❌ GATE: BLOCKED" >> $GITHUB_STEP_SUMMARY
+              echo "Found **${CRITICAL} CRITICAL** vulnerability(ies). Deployment blocked." >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**CRITICAL CVEs that triggered the gate:**" >> $GITHUB_STEP_SUMMARY
+              cat trivy-image-results.json | jq -r '
+                .Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL") |
+                "- \(.VulnerabilityID): \(.PkgName)@\(.InstalledVersion) → fix: \(.FixedVersion // "none")"
+              ' >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "> **Remediasi:** Lihat [remediation-guide.md](implementation/remediation-guide.md)" >> $GITHUB_STEP_SUMMARY
+
               echo "::error::🚨 SECURITY GATE FAILED: Found ${CRITICAL} CRITICAL vulnerabilities!"
               echo "Pipeline blocked to prevent deploying vulnerable artifacts."
-              echo "Fix the vulnerabilities and re-run the pipeline."
               echo ""
               echo "CRITICAL vulnerabilities found:"
               cat trivy-image-results.json | jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL") | "  - \(.VulnerabilityID): \(.PkgName) \(.InstalledVersion) → \(.FixedVersion // "no fix") (\(.Title // "N/A"))"'
+              echo ""
+              echo "See implementation/remediation-guide.md for fix instructions."
               exit 1
+            elif [ "$HIGH" -gt 0 ]; then
+              echo "### ⚠️ GATE: PASSED (with warnings)" >> $GITHUB_STEP_SUMMARY
+              echo "No CRITICAL vulnerabilities, but found **${HIGH} HIGH** vulnerability(ies)." >> $GITHUB_STEP_SUMMARY
+              echo "Deployment allowed. Consider fixing HIGH vulnerabilities soon." >> $GITHUB_STEP_SUMMARY
+
+              echo "⚠️  Security gate passed with warnings: ${HIGH} HIGH vulnerabilities found."
+              echo "   Deployment allowed, but consider fixing these soon."
             else
-              echo "✅ Security gate passed: No CRITICAL vulnerabilities found."
+              echo "### ✅ GATE: PASSED (clean)" >> $GITHUB_STEP_SUMMARY
+              echo "No CRITICAL or HIGH vulnerabilities found. Deployment approved." >> $GITHUB_STEP_SUMMARY
+
+              echo "✅ Security gate passed: No CRITICAL or HIGH vulnerabilities found."
             fi
           fi
+
 
   # =====================================================
   # Job 5: Artifact Signing (Anggota D — Callista)
