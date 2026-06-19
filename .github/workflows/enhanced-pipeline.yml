@@ -1,0 +1,412 @@
+# =========================================================
+# Enhanced Pipeline — Dengan Supply Chain Security
+# =========================================================
+# Pipeline ini mengimplementasikan enhancement berdasarkan:
+#   - Xia et al. (2023): Automated SBOM generation di CI/CD
+#   - O'Donoghue et al. (2024): Syft + CycloneDX untuk SBOM
+#   - Kalu et al. (2025): Sigstore keyless signing
+#
+# Arsitektur: Build → SBOM → Vuln Scan → Sign → Deploy
+# =========================================================
+
+name: Enhanced Pipeline (With Supply Chain Security)
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'app/**'
+      - '.github/workflows/enhanced-pipeline.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
+  workflow_dispatch:        # Manual trigger untuk demo
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}/devsecops-demo
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  # =====================================================
+  # Job 1: Build & Test
+  # =====================================================
+  build-and-test:
+    name: 🔨 Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm ci
+
+      - name: Run tests
+        working-directory: ./app
+        run: npm test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: app/coverage/
+          retention-days: 30
+
+  # =====================================================
+  # Job 2: Build & Push Docker Image
+  # =====================================================
+  build-image:
+    name: 🐳 Build & Push Image
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-digest: ${{ steps.build-push.outputs.digest }}
+      image-ref: ${{ env.IMAGE_NAME }}@${{ steps.build-push.outputs.digest }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker image
+        id: build-push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./app
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_NAME }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Record build metadata
+        run: |
+          echo "## 🐳 Docker Image Built" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Digest | \`${{ steps.build-push.outputs.digest }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Built at | $(date -u +"%Y-%m-%dT%H:%M:%SZ") |" >> $GITHUB_STEP_SUMMARY
+
+  # =====================================================
+  # Job 3: SBOM Generation (Anggota B — Tsll)
+  # Justifikasi: Xia et al. (2023) — automated SBOM
+  #              O'Donoghue et al. (2024) — Syft + CycloneDX
+  # =====================================================
+  sbom-generation:
+    name: 📋 Generate SBOM
+    needs: build-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # SBOM Generation menggunakan Syft
+      # Keputusan berbasis paper: O'Donoghue et al. (2024) menunjukkan
+      # Syft memiliki coverage paling konsisten untuk container images
+      - name: Generate SBOM with Syft (CycloneDX format)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+          artifact-name: sbom-cyclonedx
+
+      # Generate juga dalam format SPDX untuk perbandingan
+      - name: Generate SBOM with Syft (SPDX format)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+          artifact-name: sbom-spdx
+
+      - name: Analyze SBOM contents
+        run: |
+          echo "## 📋 SBOM Generation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count components in CycloneDX SBOM
+          CDX_COMPONENTS=$(cat sbom.cdx.json | jq '.components | length')
+          echo "### CycloneDX SBOM" >> $GITHUB_STEP_SUMMARY
+          echo "- Total components detected: **${CDX_COMPONENTS}**" >> $GITHUB_STEP_SUMMARY
+          echo "- Format: CycloneDX JSON" >> $GITHUB_STEP_SUMMARY
+          echo "- Tool: Syft (Anchore)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count packages in SPDX SBOM
+          SPDX_PACKAGES=$(cat sbom.spdx.json | jq '.packages | length')
+          echo "### SPDX SBOM" >> $GITHUB_STEP_SUMMARY
+          echo "- Total packages detected: **${SPDX_PACKAGES}**" >> $GITHUB_STEP_SUMMARY
+          echo "- Format: SPDX JSON" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Format Comparison (O'Donoghue et al., 2024)" >> $GITHUB_STEP_SUMMARY
+          echo "| Format | Components Detected |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| CycloneDX | ${CDX_COMPONENTS} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SPDX | ${SPDX_PACKAGES} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-reports
+          path: |
+            sbom.cdx.json
+            sbom.spdx.json
+          retention-days: 90
+
+  # =====================================================
+  # Job 4: Vulnerability Scanning (Anggota C — Acin)
+  # Justifikasi: O'Donoghue et al. (2024) — Trivy scanner
+  # =====================================================
+  vulnerability-scan:
+    name: 🔍 Vulnerability Scan
+    needs: [build-image, sbom-generation]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+      security-events: write    # Untuk upload SARIF ke GitHub Security
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom-reports
+
+      # Scan 1: Image-based scan (traditional approach)
+      - name: "Trivy: Scan Docker image"
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          format: 'json'
+          output: 'trivy-image-results.json'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
+
+      # Scan 2: SBOM-based scan (enhanced approach — paper recommendation)
+      - name: "Trivy: Scan SBOM (CycloneDX)"
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'sbom'
+          scan-ref: 'sbom.cdx.json'
+          format: 'json'
+          output: 'trivy-sbom-results.json'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      # Generate SARIF for GitHub Security tab
+      - name: "Trivy: Generate SARIF report"
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
+
+      # Upload SARIF ke GitHub Security tab
+      - name: Upload Trivy SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
+      - name: Analyze vulnerability results
+        run: |
+          echo "## 🔍 Vulnerability Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Analyze image scan results
+          if [ -f trivy-image-results.json ]; then
+            IMAGE_VULNS=$(cat trivy-image-results.json | jq '[.Results[]?.Vulnerabilities[]?] | length')
+            CRITICAL=$(cat trivy-image-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length')
+            HIGH=$(cat trivy-image-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="HIGH")] | length')
+            MEDIUM=$(cat trivy-image-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="MEDIUM")] | length')
+
+            echo "### Image Scan (Traditional)" >> $GITHUB_STEP_SUMMARY
+            echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| 🔴 CRITICAL | ${CRITICAL} |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟠 HIGH | ${HIGH} |" >> $GITHUB_STEP_SUMMARY
+            echo "| 🟡 MEDIUM | ${MEDIUM} |" >> $GITHUB_STEP_SUMMARY
+            echo "| **Total** | **${IMAGE_VULNS}** |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Analyze SBOM scan results
+          if [ -f trivy-sbom-results.json ]; then
+            SBOM_VULNS=$(cat trivy-sbom-results.json | jq '[.Results[]?.Vulnerabilities[]?] | length')
+            echo "### SBOM-based Scan (Enhanced — O'Donoghue et al., 2024)" >> $GITHUB_STEP_SUMMARY
+            echo "- Total vulnerabilities from SBOM scan: **${SBOM_VULNS}**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload vulnerability reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnerability-reports
+          path: |
+            trivy-image-results.json
+            trivy-sbom-results.json
+            trivy-results.sarif
+          retention-days: 90
+
+      # SECURITY GATE: Fail pipeline jika ada CRITICAL vulnerability
+      # Justifikasi: Xia et al. (2023) — SBOM value lies in actionability
+      - name: "🚨 Security Gate: Check for CRITICAL vulnerabilities"
+        run: |
+          if [ -f trivy-image-results.json ]; then
+            CRITICAL=$(cat trivy-image-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length')
+            if [ "$CRITICAL" -gt 0 ]; then
+              echo "::error::🚨 SECURITY GATE FAILED: Found ${CRITICAL} CRITICAL vulnerabilities!"
+              echo "Pipeline blocked to prevent deploying vulnerable artifacts."
+              echo "Fix the vulnerabilities and re-run the pipeline."
+              echo ""
+              echo "CRITICAL vulnerabilities found:"
+              cat trivy-image-results.json | jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity=="CRITICAL") | "  - \(.VulnerabilityID): \(.PkgName) \(.InstalledVersion) → \(.FixedVersion // "no fix") (\(.Title // "N/A"))"'
+              exit 1
+            else
+              echo "✅ Security gate passed: No CRITICAL vulnerabilities found."
+            fi
+          fi
+
+  # =====================================================
+  # Job 5: Artifact Signing (Anggota D — Callista)
+  # Justifikasi: Kalu et al. (2025) — Sigstore keyless
+  # =====================================================
+  artifact-signing:
+    name: ✍️ Sign Artifact
+    needs: [build-image, vulnerability-scan]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write         # Required untuk Sigstore OIDC keyless signing
+
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Install Cosign
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      # Sign image menggunakan keyless signing (Sigstore)
+      # Keputusan berbasis paper: Kalu et al. (2025) menemukan
+      # key management complexity adalah barrier #1 adopsi signing.
+      # Keyless signing menggunakan OIDC identity menghilangkan masalah ini.
+      - name: Sign container image (Keyless / Sigstore)
+        run: |
+          echo "Signing image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          cosign sign --yes ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+
+      # Verify signature
+      - name: Verify container image signature
+        run: |
+          echo "Verifying image signature..."
+          cosign verify \
+            --certificate-identity-regexp=".*" \
+            --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} | jq .
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✍️ Artifact Signing Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: \`${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Signing method: **Sigstore Keyless (OIDC)**" >> $GITHUB_STEP_SUMMARY
+          echo "- OIDC Issuer: GitHub Actions" >> $GITHUB_STEP_SUMMARY
+          echo "- Transparency log: **Rekor** (https://rekor.sigstore.dev)" >> $GITHUB_STEP_SUMMARY
+          echo "- Verification: ✅ **Passed**" >> $GITHUB_STEP_SUMMARY
+
+  # =====================================================
+  # Job 6: Deploy (after all security checks pass)
+  # =====================================================
+  deploy:
+    name: 🚀 Deploy
+    needs: [vulnerability-scan, artifact-signing]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy summary
+        run: |
+          echo "============================================"
+          echo "  ENHANCED DEPLOYMENT (With Security)"
+          echo "============================================"
+          echo ""
+          echo "Image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          echo ""
+          echo "✅ Supply Chain Security Checks Passed:"
+          echo "   ✅ SBOM generated (CycloneDX + SPDX)"
+          echo "   ✅ Vulnerability scan completed (Trivy)"
+          echo "   ✅ Security gate passed (no CRITICAL CVEs)"
+          echo "   ✅ Artifact signed (Sigstore keyless)"
+          echo "   ✅ Signature verified"
+          echo ""
+          echo "Deploy completed at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| SBOM Generated | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Vulnerability Scanned | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Gate Passed | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact Signed | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Signature Verified | ✅ |" >> $GITHUB_STEP_SUMMARY

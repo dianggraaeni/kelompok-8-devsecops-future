@@ -1,0 +1,49 @@
+# =========================================================
+# Konfigurasi Cosign untuk Artifact Signing
+# =========================================================
+# Tool: Cosign (Sigstore)
+# Justifikasi: Kalu et al. (2025) menemukan keyless signing
+# menghilangkan barrier key management complexity
+# =========================================================
+
+# Signing Configuration
+signing:
+  # Mode: keyless (menggunakan OIDC identity dari GitHub Actions)
+  # Keputusan berbasis paper: Kalu et al. (2025) menemukan bahwa
+  # "key management complexity adalah barrier #1 adopsi software signing"
+  # Keyless signing menggunakan OIDC identity menghilangkan masalah ini
+  mode: keyless
+
+  # OIDC Identity Provider
+  # Saat berjalan di GitHub Actions, Cosign menggunakan GitHub OIDC token
+  # untuk membuktikan identitas signer tanpa perlu manage key pair
+  oidc-issuer: "https://token.actions.githubusercontent.com"
+
+  # Transparency Log: Rekor
+  # Semua signatures dicatat di public transparency log (Rekor)
+  # Ini memberikan non-repudiation dan auditability
+  rekor-url: "https://rekor.sigstore.dev"
+
+# Verification Configuration
+verification:
+  # Certificate identity — siapa yang boleh sign
+  certificate-identity-regexp: ".*"
+
+  # OIDC issuer yang dipercaya
+  certificate-oidc-issuer: "https://token.actions.githubusercontent.com"
+
+  # Annotations yang harus ada di signature
+  required-annotations:
+    - key: "repo"
+      value-regexp: ".*kelompok-8-devsecops-future.*"
+
+# Policy
+policy:
+  # Semua images HARUS ditandatangani sebelum deploy
+  enforce-signing: true
+
+  # Signature harus di-verify sebelum pull/deploy
+  verify-before-deploy: true
+
+  # Reject images tanpa signature
+  reject-unsigned: true

@@ -1,0 +1,48 @@
+# =========================================================
+# Konfigurasi Syft untuk SBOM Generation
+# =========================================================
+# Tool: Syft (Anchore)
+# Justifikasi: O'Donoghue et al. (2024) menunjukkan Syft
+# memiliki coverage paling konsisten untuk container images
+# =========================================================
+
+# Output format — CycloneDX JSON dipilih berdasarkan:
+# O'Donoghue et al. (2024): "CycloneDX menghasilkan vulnerability
+# detection yang lebih konsisten dalam konteks CI/CD pipeline"
+output:
+  - "cyclonedx-json"
+
+# File output
+file: "sbom.cdx.json"
+
+# Catalogers yang diaktifkan
+# Syft menggunakan catalogers untuk mendeteksi packages dari berbagai sumber
+catalogers:
+  # Scan package managers
+  - name: "javascript-package-cataloger"
+    enabled: true
+  - name: "javascript-lock-cataloger"
+    enabled: true
+
+  # Scan binaries
+  - name: "binary-cataloger"
+    enabled: true
+
+  # Scan OS packages (untuk Alpine/Debian packages di base image)
+  - name: "apk-db-cataloger"
+    enabled: true
+  - name: "dpkg-db-cataloger"
+    enabled: true
+
+# Scope — AllLayers untuk scan semua Docker layers
+# Ini memastikan dependensi yang di-install di intermediate layers juga terdeteksi
+package:
+  search-indexed-archives: true
+  search-unindexed-archives: false
+
+# Exclude patterns (tidak perlu scan file-file ini)
+exclude:
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/.git/**"
+  - "**/node_modules/.cache/**"

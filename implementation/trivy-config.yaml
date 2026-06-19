@@ -1,0 +1,41 @@
+# =========================================================
+# Konfigurasi Trivy untuk Vulnerability Scanning
+# =========================================================
+# Tool: Trivy (Aqua Security)
+# Justifikasi: O'Donoghue et al. (2024) mengevaluasi Trivy
+# sebagai scanner dengan detection rate tinggi
+# =========================================================
+
+# Severity yang di-scan
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+
+# Ignore unfixed vulnerabilities
+# (vulnerability tanpa fix yang tersedia tidak bisa di-remediate)
+ignore-unfixed: true
+
+# Timeout untuk scanning (dalam detik)
+timeout: 300s
+
+# Format output
+format: json
+
+# Database
+db:
+  # Auto-update vulnerability database sebelum scan
+  skip-update: false
+
+# Vulnerability settings
+vulnerability:
+  # Tipe vulnerability yang di-scan
+  type:
+    - os          # OS package vulnerabilities (Alpine, Debian, etc.)
+    - library     # Application library vulnerabilities (npm, pip, etc.)
+
+# Security gate configuration
+# CRITICAL: exit code 1 (fail pipeline)
+# HIGH: warning only (untuk fase awal adopsi)
+exit-code: 1
+exit-on-eol: 1        # Fail jika base image sudah End of Life
