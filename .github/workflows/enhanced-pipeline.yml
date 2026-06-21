@@ -113,7 +113,7 @@ jobs:
           echo "| Built at | $(date -u +"%Y-%m-%dT%H:%M:%SZ") |" >> $GITHUB_STEP_SUMMARY
 
   # =====================================================
-  # Job 3: SBOM Generation (Anggota B — Tsll)
+  # Job 3: SBOM Generation (Anggota B — Tsaldia)
   # Justifikasi: Xia et al. (2023) — automated SBOM
   #              O'Donoghue et al. (2024) — Syft + CycloneDX
   # =====================================================
@@ -155,6 +155,43 @@ jobs:
           format: spdx-json
           output-file: sbom.spdx.json
           artifact-name: sbom-spdx
+      
+      - name: Verify SBOM Files
+        run: |
+          echo "=== SBOM Verification ==="
+
+          echo "CycloneDX:"
+          ls -lh sbom.cdx.json
+
+          echo ""
+          echo "SPDX:"
+          ls -lh sbom.spdx.json
+
+          echo ""
+          echo "CycloneDX Components:"
+          jq '.components | length' sbom.cdx.json
+
+          echo ""
+          echo "SPDX Packages:"
+          jq '.packages | length' sbom.spdx.json
+
+      - name: Verify Application Dependencies in SBOM
+        run: |
+          echo "===================================="
+          echo " VERIFY APPLICATION DEPENDENCIES"
+          echo "===================================="
+
+          for pkg in lodash axios jsonwebtoken minimist node-fetch
+          do
+            echo ""
+            echo "Checking $pkg ..."
+
+            if grep -iq "$pkg" sbom.cdx.json; then
+              echo "✅ Found $pkg"
+            else
+              echo "❌ Not Found $pkg"
+            fi
+          done
 
       - name: Analyze SBOM contents
         run: |
