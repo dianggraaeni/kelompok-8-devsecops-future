@@ -59,7 +59,7 @@ Pipeline CI/CD mengikuti arsitektur **linear dengan quality gates**, di mana set
 | Anggota | Peran | Tanggung Jawab |
 |---------|-------|----------------|
 | **A — Dian Anggraeni** | App & Containerization | Membuat aplikasi, menulis Dockerfile dengan multi-stage build, konfigurasi `.dockerignore`, optimasi ukuran image |
-| **B — Tsalitsatun Nafsi (Tsll)** | CI/CD & SBOM | Membuat workflow GitHub Actions, mengintegrasikan Syft untuk generasi SBOM, konfigurasi output format CycloneDX |
+| **B — Tsaldia Hukma Cita** | CI/CD & SBOM | Membuat workflow GitHub Actions, mengintegrasikan Syft untuk generasi SBOM, konfigurasi output format CycloneDX |
 | **C — Acin** | Vulnerability Scanning & Gate | Mengintegrasikan Trivy ke pipeline, mengonfigurasi severity threshold, membuat security gate yang menghentikan pipeline jika ditemukan kerentanan kritis |
 | **D — Callista** | Artifact Signing & Verification | Mengimplementasikan Cosign untuk signing image, menyiapkan verifikasi tanda tangan, mengelola key management |
 
