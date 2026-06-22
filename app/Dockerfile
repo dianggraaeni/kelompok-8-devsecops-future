@@ -4,6 +4,7 @@
 # Menggunakan Node.js 18 Alpine sebagai base image
 # Alpine dipilih untuk ukuran image yang lebih kecil
 FROM node:18-alpine AS builder
+RUN apk update && apk upgrade --no-cache
 
 # Set working directory
 WORKDIR /app
