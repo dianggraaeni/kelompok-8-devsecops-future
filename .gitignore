@@ -46,3 +46,5 @@ sbom.cdx.json
 trivy-results.sarif
 trivy-results.json
 *.sig
+
+cosign.exe

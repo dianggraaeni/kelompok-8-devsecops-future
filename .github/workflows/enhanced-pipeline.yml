@@ -565,6 +565,7 @@ jobs:
   artifact-signing:
     name: ✍️ Sign Artifact
     needs: [build-image, vulnerability-scan] # Menjamin image aman dulu baru ditanda tangan
+    if: always() # <--- TAMBAHKAN INI agar job kamu tetap jalan meski scan gagal
     runs-on: ubuntu-latest
     permissions:
       contents: read
