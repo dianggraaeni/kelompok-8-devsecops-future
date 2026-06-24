@@ -1,6 +1,5 @@
-# Panduan Remediasi Vulnerability — Anggota C
+# Panduan Remediasi Vulnerability
 # =========================================================
-# Acintya Edria Sudarsono (5027231020)
 # Komponen: Vulnerability Scanning & Security Gate
 # =========================================================
 
