@@ -27,6 +27,7 @@ RUN npm test
 # Stage 2: Production
 # =========================================
 FROM node:18-alpine AS production
+RUN apk update && apk upgrade --no-cache
 
 # Metadata labels sesuai OCI Image Spec
 # Label ini akan muncul di SBOM dan membantu traceability
