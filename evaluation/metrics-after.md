@@ -90,11 +90,11 @@ Verification for ghcr.io/dianggraaeni/kelompok-8-devsecops-future/devsecops-demo
 **Syft Result:** Berhasil men-generate `sbom.cdx.json` (CycloneDX) dan `sbom.spdx.json`.
 
 #4.4 Documentations
-**Bukti verifikasi signature berhasil (Cosign):**
-![Cosign Verification Success](../evidence/artifact-signing-success.png)
+**Screenshot Verifikasi Cosign:**  
+![Cosign Verification Success](evidence/artifact-signing-success.png)
 
-**Screenshot Log di GitHub Actions:**
-![GitHub Actions Sign Job](../evidence/github-actions-summary.png)
+**Screenshot Log Signing di GitHub Actions:**  
+![GitHub Actions Sign Job](evidence/github-actions-summary.png)
 
 ---
 > _Hasil pengukuran ini mengonfirmasi bahwa penambahan komponen keamanan memberikan visibilitas penuh terhadap risiko supply chain yang sebelumnya tidak terdeteksi._
