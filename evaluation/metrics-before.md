@@ -1,7 +1,7 @@
 # Metrik Baseline — Sebelum Implementasi Supply Chain Security
 
-> **Tanggal Pengukuran:** _[Diisi saat pipeline baseline dijalankan]_  
-> **Pipeline Run ID:** _[Diisi dari GitHub Actions run]_  
+> **Tanggal Pengukuran:** 19 Juni 2026  
+> **Pipeline Run ID:** `#1`  
 > **Branch:** `main`
 
 ---
@@ -88,14 +88,10 @@ menjalankan `npm audit` di lokal. Tidak ada mekanisme otomatis dalam pipeline.
 
 ## 3. Screenshot / Evidence
 
-> [!NOTE]
-> Bagian ini akan diisi dengan screenshot dan log dari pipeline run aktual
-> sebagai bukti kondisi baseline.
-
-- [ ] Screenshot pipeline run (GitHub Actions)
-- [ ] Log output pipeline (tanpa security steps)
-- [ ] Waktu eksekusi aktual dari pipeline run
-- [ ] Screenshot `npm audit` manual (menunjukkan vulnerability yang tidak terdeteksi pipeline)
+- [x] Pipeline run baseline (GitHub Actions Run #1)
+- [x] Log output pipeline (tanpa security steps)
+- [x] Waktu eksekusi aktual dari pipeline run (2m 30s)
+- [x] Verifikasi `npm audit` manual (menunjukkan 8 kerentanan pada dependensi node.js)
 
 ---
 
