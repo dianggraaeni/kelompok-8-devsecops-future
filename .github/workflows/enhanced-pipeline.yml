@@ -13,7 +13,7 @@ name: Enhanced Pipeline (With Supply Chain Security)
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, remediation]
     paths:
       - 'app/**'
       - '.github/workflows/enhanced-pipeline.yml'
