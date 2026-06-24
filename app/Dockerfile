@@ -52,7 +52,8 @@ COPY package*.json ./
 # Install HANYA production dependencies
 # --omit=dev menghilangkan devDependencies untuk mengurangi attack surface
 RUN npm ci --omit=dev && \
-    npm cache clean --force
+    npm cache clean --force && \
+    rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 # Copy source code dari builder stage
 COPY --from=builder /app/src ./src
