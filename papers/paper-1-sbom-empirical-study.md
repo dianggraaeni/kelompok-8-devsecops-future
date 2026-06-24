@@ -13,7 +13,7 @@
 | **Penulis** | Boming Xia, Tingting Bi, Zhenchang Xing, Qinghua Lu, Liming Zhu |
 | **Tahun** | 2023 |
 | **Venue** | IEEE/ACM 45th International Conference on Software Engineering (ICSE 2023) |
-| **DOI** | [10.1109/ICSE48619.2023.00197](https://doi.org/10.1109/ICSE48619.2023.00197) |
+| **DOI** | [10.1109/ICSE48619.2023.00219](https://doi.org/10.1109/ICSE48619.2023.00219) |
 | **Tipe Studi** | Empirical Study (Mixed Methods: Survey + Mining Software Repository) |
 | **Afiliasi** | CSIRO's Data61 & Australian National University |
 | **Jumlah Halaman** | 13 halaman |
