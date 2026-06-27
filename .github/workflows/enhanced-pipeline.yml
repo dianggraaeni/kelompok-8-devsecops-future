@@ -565,7 +565,7 @@ jobs:
   artifact-signing:
     name: ✍️ Sign Artifact
     needs: [build-image, vulnerability-scan] # Menjamin image aman dulu baru ditanda tangan
-    if: always() # <--- TAMBAHKAN INI agar job kamu tetap jalan meski scan gagal
+    # if: always() # <--- TAMBAHKAN INI agar job kamu tetap jalan meski scan gagal
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -623,19 +623,22 @@ jobs:
     name: 🚀 Deploy
     needs: [vulnerability-scan, artifact-signing]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    # if: always()
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy summary
+      - name: Prepare deployment package
         run: |
           echo "============================================"
           echo "  ENHANCED DEPLOYMENT (With Security)"
           echo "============================================"
           echo ""
-          echo "Image: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          echo "Image   : ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+          echo "SHA     : ${{ github.sha }}"
+          echo "Ref     : ${{ github.ref_name }}"
+          echo "Actor   : ${{ github.actor }}"
           echo ""
           echo "✅ Supply Chain Security Checks Passed:"
           echo "   ✅ SBOM generated (CycloneDX + SPDX)"
@@ -644,9 +647,53 @@ jobs:
           echo "   ✅ Artifact signed (Sigstore keyless)"
           echo "   ✅ Signature verified"
           echo ""
-          echo "Deploy completed at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
+      - name: Generate deployment manifest
+        run: |
+          mkdir -p deployment
+          cat <<EOF > deployment/deploy-info.txt
+          ============================================
+          DEPLOYMENT MANIFEST
+          ============================================
+          Image     : ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          Digest    : ${{ needs.build-image.outputs.image-digest }}
+          SHA       : ${{ github.sha }}
+          Ref       : ${{ github.ref_name }}
+          Actor     : ${{ github.actor }}
+          Timestamp : $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          Security Checks:
+          - SBOM          : PASSED
+          - Vuln Scan     : PASSED
+          - Security Gate : PASSED
+          - Signing       : PASSED
+          ============================================
+          EOF
+
+          cat deployment/deploy-info.txt
+
+      - name: Upload deployment manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-manifest
+          path: deployment/deploy-info.txt
+          retention-days: 90
+
+      - name: Publish Deployment Summary
+        run: |
           echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| SHA | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployed by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Timestamp | $(date -u +"%Y-%m-%dT%H:%M:%SZ") |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### ✅ Security Validation Before Deployment" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
@@ -655,3 +702,10 @@ jobs:
           echo "| Security Gate Passed | ✅ |" >> $GITHUB_STEP_SUMMARY
           echo "| Artifact Signed | ✅ |" >> $GITHUB_STEP_SUMMARY
           echo "| Signature Verified | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### 🔄 Enhanced CI/CD Flow" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Build → Test → Docker Build → **SBOM** → **Vuln Scan** → **Security Gate** → **Sign** → Deploy" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> All security validations passed. Deployment artifact is verified, signed, and ready." >> $GITHUB_STEP_SUMMARY
