@@ -79,6 +79,31 @@ jobs:
           docker push ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           docker push ${{ env.IMAGE_NAME }}:baseline-latest
 
+      - name: Publish Build Summary
+        run: |
+          echo "## 🐳 Baseline Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | \`${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Registry | GitHub Container Registry |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Status | ✅ Success |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Time | $(date -u +"%Y-%m-%dT%H:%M:%SZ") |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ⚠️ Security Capabilities (This Pipeline)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Capability | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Application | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Testing | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Image Build | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Image Push | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| SBOM Generation | ❌ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Verification | ❌ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Vulnerability Scan | ❌ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Gate | ❌ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact Signing | ❌ |" >> $GITHUB_STEP_SUMMARY
+
       # ⚠️ Image di-push TANPA:
       #   - SBOM (tidak tahu dependensi apa yang ada di dalam image)
       #   - Vulnerability scan (tidak tahu apakah ada CVE)
@@ -112,3 +137,42 @@ jobs:
           echo "   ❌ No provenance — unknown build origin"
           echo ""
           echo "Deploy completed at: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+      - name: Publish Deployment Summary
+        run: |
+          echo "## 🚀 Baseline Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployment | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Built | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Published | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployment Executed | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Validation | ❌ Not Performed |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚨 Security Risks" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Unknown software dependencies (no SBOM)." >> $GITHUB_STEP_SUMMARY
+          echo "- Vulnerabilities not detected before deployment." >> $GITHUB_STEP_SUMMARY
+          echo "- Image authenticity cannot be verified (no signing)." >> $GITHUB_STEP_SUMMARY
+          echo "- No software supply chain visibility." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📈 Comparison with Enhanced Pipeline" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Feature | Baseline | Enhanced |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|----------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build & Test | ✅ | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Image | ✅ | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| SBOM Generation | ❌ | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Verification | ❌ | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Vulnerability Scan | ❌ | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Gate | ❌ | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact Signing | ❌ | ✅ |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎓 Research Alignment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Research | Baseline Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-----------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Xia et al. (2023) | Not Implemented |" >> $GITHUB_STEP_SUMMARY
+          echo "| O'Donoghue et al. (2024) | Not Implemented |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> This baseline represents a traditional CI/CD pipeline without supply chain security controls, motivating the enhanced pipeline implementation." >> $GITHUB_STEP_SUMMARY
