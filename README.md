@@ -8,15 +8,15 @@
 
 ## Daftar Isi
 
-- [Ringkasan Proyek](#-ringkasan-proyek)
-- [Tim](#-tim)
-- [Arsitektur](#-arsitektur)
-- [Paper yang Digunakan](#-paper-yang-digunakan)
-- [Quick Start](#-quick-start)
-- [Struktur Repositori](#-struktur-repositori)
-- [Komponen Implementasi](#-komponen-implementasi)
-- [Evaluasi](#-evaluasi)
-- [Cara Reproduksi](#-cara-reproduksi)
+- [Ringkasan Proyek](#ringkasan-proyek)
+- [Tim](#tim)
+- [Arsitektur](#arsitektur)
+- [Paper yang Digunakan](#paper-yang-digunakan)
+- [Quick Start](#quick-start)
+- [Struktur Repositori](#struktur-repositori)
+- [Komponen Implementasi](#komponen-implementasi)
+- [Evaluasi](#evaluasi)
+- [Cara Reproduksi](#cara-reproduksi)
 
 ---
 
